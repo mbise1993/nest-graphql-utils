@@ -44,6 +44,7 @@
     "eslint-config-prettier": "^6.7.0",
     "eslint-plugin-import": "^2.19.1",
     "jest": "^25.1.0",
+    "lint-staged": "^10.0.8",
     "prettier": "^1.18.2",
     "rimraf": "^3.0.2",
     "ts-jest": "25.1.0",
@@ -65,5 +66,8 @@
     "setupFilesAfterEnv": [
       "./setupTests.ts"
     ]
+  },
+  "lint-staged": {
+    "*.ts": "npm run lint"
   }
 }
