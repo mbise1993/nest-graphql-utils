@@ -11,11 +11,11 @@ jobs:
           steps:
             - run: npm install
             - run:
-              name: Build
-              command: npm run build
+                name: Build
+                command: npm run build
             - run:
-              name: Run tests
-              command: npm run test:cov
+                name: Run tests
+                command: npm run test:cov
 workflows:
   build-and-test:
     jobs:
