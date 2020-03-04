@@ -88,7 +88,7 @@ class TodoItemResolver {
     return await createConnection({
       paginationArgs,
       connectionClass: TodoItemConnection,
-      paginate: args => this.service.paginateItems(args.skip, args.take),
+      paginate: args => this.service.paginateItems(args.offset, args.limit),
     });
   }
 }
