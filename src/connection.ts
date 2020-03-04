@@ -1,25 +1,40 @@
 import { ClassType, ObjectType, Field, Int, ArgsType } from 'type-graphql';
-
-import { PageInfo } from './pageInfo';
-import { Edge, IEdge } from './edge';
 import { Min } from 'class-validator';
-import { Cursor } from './cursor';
+
+import { PageInfo, IPageInfo } from './pageInfo';
+import { IEdge } from './edge';
 
 export interface IConnection<TNode> {
   totalCount: number;
-  pageInfo: PageInfo;
+  pageInfo: IPageInfo;
   edges: IEdge<TNode>[];
 }
 
-export const Connection = <TNode>(TNodeClass: ClassType<TNode>) => {
-  @ObjectType(`${TNodeClass.name}Edge`)
-  class EdgeClass extends Edge(TNodeClass) {}
+export interface IConnectionClass<TNode> {
+  new (
+    totalCount: number,
+    pageInfo: IPageInfo,
+    edges: IEdge<TNode>[],
+  ): IConnection<TNode>;
+}
 
-  @ObjectType({
+export const Connection = <TNode>(
+  TNodeClass: ClassType<TNode>,
+): IConnectionClass<TNode> => {
+  @ObjectType(`${TNodeClass.name}Edge`)
+  class EdgeClass implements IEdge<TNode> {
+    @Field()
+    public cursor: string;
+
+    @Field(type => TNodeClass)
+    public node: TNode;
+  }
+
+  @ObjectType(`${TNodeClass.name}Connection`, {
     isAbstract: true,
     description: `Provides paginated ${TNodeClass.name} data`,
   })
-  abstract class ConnectionClass implements IConnection<TNode> {
+  class ConnectionClass implements IConnection<TNode> {
     constructor(totalCount: number, pageInfo: PageInfo, edges: EdgeClass[]) {
       this.totalCount = totalCount;
       this.pageInfo = pageInfo;
@@ -44,57 +59,18 @@ export const Connection = <TNode>(TNodeClass: ClassType<TNode>) => {
 };
 
 @ArgsType()
-export class ConnectionArgs {
+export class PaginationArgs {
+  @Field({ nullable: true })
+  public after?: string;
+
   @Field(type => Int, { nullable: true })
   @Min(0)
   public first?: number;
 
   @Field({ nullable: true })
-  public after?: string;
+  public before?: string;
+
+  @Field(type => Int, { nullable: true })
+  @Min(0)
+  public last?: number;
 }
-
-interface IConnectionClass<TNode> {
-  new (
-    totalCount: number,
-    pageInfo: PageInfo,
-    edges: IEdge<TNode>[],
-  ): IConnection<TNode>;
-}
-
-export interface IPaginateArgs {
-  skip: number;
-  take: number;
-}
-
-export interface ICreateConnectionOptions<TEntity, TNode> {
-  paginate(args: IPaginateArgs): Promise<[TEntity[], number]>;
-  mapToNode(entity: TEntity): TNode;
-  connectionClass: IConnectionClass<TNode>;
-  connectionArgs: ConnectionArgs;
-}
-
-export const createConnection = async <TEntity, TNode>(
-  options: ICreateConnectionOptions<TEntity, TNode>,
-) => {
-  const { first, after } = options.connectionArgs;
-
-  const take = first || 20;
-  const skip = after ? Cursor.decode(after) : 0;
-  const [entities, totalCount] = await options.paginate({ skip, take });
-
-  const pageInfo = new PageInfo(
-    Cursor.encode(skip),
-    Cursor.encode(skip + entities.length),
-    skip > 0,
-    skip + entities.length >= skip + take,
-  );
-
-  const edges = entities.map((entity, index) => {
-    return {
-      cursor: Cursor.encode(skip + index),
-      node: options.mapToNode(entity),
-    };
-  });
-
-  return new options.connectionClass(totalCount, pageInfo, edges);
-};

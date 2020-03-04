@@ -1,19 +1,14 @@
 import { ObjectType, Field } from 'type-graphql';
 
-@ObjectType({ description: 'Provides info abou the current page' })
-export class PageInfo {
-  constructor(
-    startCursor: string,
-    endCursor: string,
-    hasPreviousPage: boolean,
-    hasNextPage: boolean,
-  ) {
-    this.startCursor = startCursor;
-    this.endCursor = endCursor;
-    this.hasPreviousPage = hasPreviousPage;
-    this.hasNextPage = hasNextPage;
-  }
+export interface IPageInfo {
+  startCursor: string;
+  endCursor: string;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
 
+@ObjectType({ description: 'Provides info abou the current page' })
+export class PageInfo implements IPageInfo {
   @Field({ description: 'Cursor referencing the beginning of the page' })
   startCursor: string;
 
