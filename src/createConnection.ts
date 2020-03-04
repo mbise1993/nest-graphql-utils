@@ -3,8 +3,8 @@ import { Cursor } from './cursor';
 import { IConnectionClass, PaginationArgs } from './connection';
 
 export interface IPaginateArgs {
-  skip: number;
-  take: number;
+  offset: number;
+  limit: number;
 }
 
 export interface ICreateConnectionOptions<TNode> {
@@ -20,29 +20,33 @@ export const createConnection = async <TNode>({
   defaultPageSize = 20,
   paginate,
 }: ICreateConnectionOptions<TNode>) => {
-  let skip = 0;
-  let take = defaultPageSize;
+  let offset = 0;
+  let limit = paginationArgs.first || defaultPageSize;
 
   if (paginationArgs.after) {
-    skip = Cursor.getOffset(paginationArgs.after);
-    take = paginationArgs.first || take;
+    offset = Cursor.getOffset(paginationArgs.after) + 1;
   } else if (paginationArgs.before) {
-    take = paginationArgs.last || take;
-    skip = Cursor.getOffset(paginationArgs.before) - take;
+    const beforeOffset = Cursor.getOffset(paginationArgs.before);
+    limit = paginationArgs.last || limit;
+    offset = beforeOffset - limit;
+    if (offset < 0) {
+      limit = beforeOffset;
+      offset = 0;
+    }
   }
 
-  const [nodes, totalCount] = await paginate({ skip, take });
+  const [nodes, totalCount] = await paginate({ offset: offset, limit: limit });
 
   const pageInfo: IPageInfo = {
-    startCursor: Cursor.create(connectionClass.name, skip),
-    endCursor: Cursor.create(connectionClass.name, skip + nodes.length),
-    hasPreviousPage: skip > 0,
-    hasNextPage: skip + nodes.length < totalCount,
+    startCursor: Cursor.create(connectionClass.name, offset),
+    endCursor: Cursor.create(connectionClass.name, offset + nodes.length),
+    hasPreviousPage: offset > 0,
+    hasNextPage: offset + nodes.length < totalCount,
   };
 
   const edges = nodes.map((node, index) => {
     return {
-      cursor: Cursor.create(connectionClass.name, skip + index),
+      cursor: Cursor.create(connectionClass.name, offset + index),
       node,
     };
   });

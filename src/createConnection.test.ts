@@ -5,7 +5,7 @@ import { Cursor } from './cursor';
 
 describe(createConnection.name, () => {
   describe('no pagination args', () => {
-    it('skips 0 and takes default page size', async () => {
+    it('uses defaults', async () => {
       const paginationArgs = new PaginationArgs();
 
       await createConnection({
@@ -13,8 +13,8 @@ describe(createConnection.name, () => {
         connectionClass: TestConnection,
         defaultPageSize: 10,
         paginate: args => {
-          expect(args.skip).toEqual(0);
-          expect(args.take).toEqual(10);
+          expect(args.offset).toEqual(0);
+          expect(args.limit).toEqual(10);
           return Promise.resolve([[], 0]);
         },
       });
@@ -22,7 +22,37 @@ describe(createConnection.name, () => {
   });
 
   describe('forward pagination', () => {
-    it('skips "after" offset and takes "first"', async () => {
+    it('uses default offset if "after" not provided', async () => {
+      const paginationArgs = new PaginationArgs();
+      paginationArgs.first = 10;
+
+      await createConnection({
+        paginationArgs,
+        connectionClass: TestConnection,
+        paginate: args => {
+          expect(args.offset).toEqual(0);
+          expect(args.limit).toEqual(10);
+          return Promise.resolve([[], 0]);
+        },
+      });
+    });
+
+    it('uses default page size if "first" not provided', async () => {
+      const paginationArgs = new PaginationArgs();
+      paginationArgs.first = 10;
+
+      await createConnection({
+        paginationArgs,
+        connectionClass: TestConnection,
+        paginate: args => {
+          expect(args.offset).toEqual(0);
+          expect(args.limit).toEqual(10);
+          return Promise.resolve([[], 0]);
+        },
+      });
+    });
+
+    it('uses "after" and "first"', async () => {
       const paginationArgs = new PaginationArgs();
       paginationArgs.after = Cursor.create(TestConnection.name, 10);
       paginationArgs.first = 10;
@@ -31,8 +61,8 @@ describe(createConnection.name, () => {
         paginationArgs,
         connectionClass: TestConnection,
         paginate: args => {
-          expect(args.skip).toEqual(10);
-          expect(args.take).toEqual(10);
+          expect(args.offset).toEqual(11);
+          expect(args.limit).toEqual(10);
           return Promise.resolve([[], 0]);
         },
       });
@@ -40,7 +70,7 @@ describe(createConnection.name, () => {
   });
 
   describe('backward pagination', () => {
-    it('skips "before" - "last" and takes "last"', async () => {
+    it('uses "before" and "last"', async () => {
       const paginationArgs = new PaginationArgs();
       paginationArgs.before = Cursor.create(TestConnection.name, 30);
       paginationArgs.last = 10;
@@ -49,8 +79,24 @@ describe(createConnection.name, () => {
         paginationArgs,
         connectionClass: TestConnection,
         paginate: args => {
-          expect(args.skip).toEqual(20);
-          expect(args.take).toEqual(10);
+          expect(args.offset).toEqual(20);
+          expect(args.limit).toEqual(10);
+          return Promise.resolve([[], 0]);
+        },
+      });
+    });
+
+    it('handles "before" - "limit" < 0', async () => {
+      const paginationArgs = new PaginationArgs();
+      paginationArgs.before = Cursor.create(TestConnection.name, 10);
+      paginationArgs.last = 20;
+
+      await createConnection({
+        paginationArgs,
+        connectionClass: TestConnection,
+        paginate: args => {
+          expect(args.offset).toEqual(0);
+          expect(args.limit).toEqual(10);
           return Promise.resolve([[], 0]);
         },
       });
