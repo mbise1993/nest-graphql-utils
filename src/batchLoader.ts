@@ -1,4 +1,4 @@
-import DataLoader from 'dataloader';
+import DataLoader = require('dataloader');
 
 export abstract class BatchLoader<TItem, TKey = number> {
   private loader: DataLoader<TKey, TItem>;
