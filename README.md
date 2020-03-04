@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/mbise1993/nest-graphql-utils/tree/master.svg?style=svg)](https://circleci.com/gh/mbise1993/nest-graphql-utils/tree/master)
+
 # Nest GraphQL Utils
 A collection of utilities for building real-world GraphQL apps using [NestJS](https://nestjs.com/).
 
