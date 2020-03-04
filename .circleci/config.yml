@@ -10,7 +10,12 @@ jobs:
       - node/with-cache:
           steps:
             - run: npm install
-            - run: npm run test:cov
+            - run:
+              name: Build
+              command: npm run build
+            - run:
+              name: Run tests
+              command: npm run test:cov
 workflows:
   build-and-test:
     jobs:
