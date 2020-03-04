@@ -1,13 +1,29 @@
-import DataLoader = require('dataloader');
+import DataLoader from 'dataloader';
 
-export abstract class BatchLoader<T> {
-  private loader: DataLoader<number, T>;
+export abstract class BatchLoader<TItem, TKey = number> {
+  private loader: DataLoader<TKey, TItem>;
 
-  constructor(load: (ids: number[]) => Promise<T[]>) {
-    this.loader = new DataLoader<number, T>(keys => load(keys as number[]));
+  constructor() {
+    this.loader = new DataLoader<TKey, TItem>(keys =>
+      this.load(keys as TKey[]),
+    );
   }
 
-  public async load(id: number) {
-    return await this.loader.load(id);
+  public abstract async load(keys: TKey[]): Promise<(TItem | Error)[]>;
+
+  public async loadOne(key: TKey) {
+    return this.loader.load(key);
+  }
+
+  public async loadMany(keys: TKey[]) {
+    return await this.loader.loadMany(keys);
+  }
+
+  public clearOne(key: TKey) {
+    this.loader.clear(key);
+  }
+
+  public clearAll() {
+    this.loader.clearAll();
   }
 }
