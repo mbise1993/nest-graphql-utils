@@ -58,6 +58,7 @@ We can create a connection class by extending `Connection` and use it on the `it
 ```typescript
 import { Connection } from 'nest-graphql-utils';
 
+@ObjectType()
 class TodoItemConnection extends Connection(TodoItem) {}
 
 @ObjectType()
